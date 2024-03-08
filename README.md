@@ -11,6 +11,9 @@ And if you are not a Dev, you can contribute with the graphics section.
 > [!NOTE]  
 > The project is not done... So you can collab, feel free :)
 
+>[!WARNING]
+>The coments of the code and text are in Spanish, I know I need to change... Soon will be ready
+
 ## Deployment
 
 To deploy this project run
