@@ -44,6 +44,7 @@ class Blockchain:
         self.transactions = []  # Clear transactions list after adding to block
         self.chain.append(block)  # Add block to the chain
         return block
+        
 
     # Retrieve the previous block in the chain
     def get_previous_block(self):
@@ -64,6 +65,7 @@ class Blockchain:
 
     # Hash a block using SHA-256
     def hash(self, block):
+        print(block)
         encoded_block = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(encoded_block).hexdigest()
 
@@ -102,7 +104,7 @@ class Blockchain:
                 return 'Insufficient balance to perform transaction.'
             
             # Verify digital signature
-            if not rsa.verify(json.dumps({'sender': sender, 'receiver': receiver, 'amount': amount}), signature, sender_wallet['public_key']):
+            if not rsa.verify(json.dumps({'sender': sender, 'receiver': receiver, 'amount': amount}).encode('utf-8'), signature, sender_wallet['public_key']):
                 return 'Invalid digital signature.'
 
         # Add transaction to pending transactions list

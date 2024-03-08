@@ -96,7 +96,7 @@ def add_transaction():
     private_key = sender_wallet['private_key']
 
     # Sign the transaction
-    signature = rsa.sign(json.dumps({'sender': sender, 'receiver': receiver, 'amount': amount}), private_key, 'SHA-256')
+    signature = rsa.sign(json.dumps({'sender': sender, 'receiver': receiver, 'amount': amount}).encode('utf-8'), private_key, 'SHA-256')
 
     # Add the transaction using provided data and signature
     result = blockchain.add_transaction(sender, receiver, amount, signature)
