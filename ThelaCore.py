@@ -1,42 +1,45 @@
-
-import datetime
-import hashlib
-import json
 from flask import Flask, jsonify, request
-import requests
-import rsa
-import os
-import sys
-from urllib.parse import urlparse
 import threading
+import sys
 import time
+import rsa
+import json
+
+# Import the Blockchain class from blockchain.py file
 from Blockchain_Network import Blockchain
 
-
+# Create a Flask app instance
 app = Flask(__name__)
+
+# Configure JSONIFY_PRETTYPRINT_REGULAR to False to avoid pretty printing JSON responses
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+
+# Instantiate the Blockchain class
 blockchain = Blockchain()
 
-
+# Route to mine a new block
 @app.route('/mine_block', methods=['GET'])
 def mine_block():
+    # Get the previous block
     previous_block = blockchain.get_previous_block()
     previous_proof = previous_block['proof']
     proof = blockchain.proof_of_work(previous_proof)
     previous_hash = blockchain.hash(previous_block)
     
-    # Reducir la recompensa si corresponde
+    # Reduce the reward if applicable
     if len(blockchain.chain) % blockchain.reward_interval == 0:
-        blockchain.reward /= blockchain.halving_factor  # Reducir la recompensa a la mitad
+        blockchain.reward /= blockchain.halving_factor  # Reduce the reward by half
     
     reward = blockchain.reward
-    miner_address = request.args.get('miner_address')  # Obtener la dirección del minero de los parámetros de la solicitud
-    blockchain.add_transaction(sender='network', receiver=Blockchain.miner_address, amount=reward, signature=Blockchain.MINER_REWARD_SIGNATURE)  # No se necesita firma para la recompensa del minero
+    miner_address = request.args.get('miner_address')  # Get the miner's address from the request parameters
+    # Add a transaction to reward the miner
+    blockchain.add_transaction(sender='network', receiver=Blockchain.miner_address, amount=reward, signature=Blockchain.MINER_REWARD_SIGNATURE)  # No signature needed for miner reward
     blockchain.wallets[Blockchain.miner_address]['balance'] += reward
     
+    # Create the new block
     block = blockchain.create_block(proof, previous_hash)
     response = {
-        'message': '¡Enhorabuena, has minado un nuevo bloque!',
+        'message': 'Congratulations, you have mined a new block!',
         'index': block['index'],
         'timestamp': block['timestamp'],
         'proof': block['proof'],
@@ -46,132 +49,129 @@ def mine_block():
 
     return jsonify(response), 200
 
-
+# Route to get the entire blockchain
 @app.route('/get_chain', methods=['GET'])
 def get_chain():
     response = {'chain': blockchain.chain, 'length': len(blockchain.chain)}
     return jsonify(response), 200
 
+# Route to receive a new block from other nodes
 @app.route('/receive_new_block', methods=['POST'])
 def receive_new_block():
     new_block = request.json['new_block']
     blockchain.chain.append(new_block)
-    response = {'message': 'El bloque ha sido agregado a la cadena'}
+    response = {'message': 'The block has been added to the blockchain'}
     return jsonify(response), 200
 
-
+# Route to check if the blockchain is valid
 @app.route('/is_valid', methods=['GET'])
 def is_valid():
     is_valid = blockchain.is_chain_valid(blockchain.chain)
     if is_valid:
-        response = {'message': 'Todo correcto. La cadena de bloques es válida.'}
+        response = {'message': 'Everything is fine. The blockchain is valid.'}
     else:
-        response = {'message': 'Houston, tenemos un problema. La cadena de bloques no es válida.'}
+        response = {'message': 'Houston, we have a problem. The blockchain is not valid.'}
     return jsonify(response), 200  
 
-
-
+# Route to add a new transaction to the blockchain
 @app.route('/add_transaction', methods=['POST'])
 def add_transaction():
     json_data = request.get_json()
     
-    # Verificar si se proporcionaron todos los campos necesarios
+    # Check if all required fields are provided
     if not all(key in json_data for key in ['sender', 'receiver', 'amount']):
-        return jsonify({'message': 'Todos los campos (sender, receiver, amount) son requeridos'}), 400
+        return jsonify({'message': 'All fields (sender, receiver, amount) are required'}), 400
 
-    # Verificar si los campos tienen el tipo de datos correcto
+    # Check if fields have correct data type
     sender = json_data.get('sender')
     receiver = json_data.get('receiver')
     amount = json_data.get('amount')
     if not isinstance(amount, (int, float)):
-        return jsonify({'message': 'El campo "amount" debe ser un número'}), 400
+        return jsonify({'message': 'The "amount" field must be a number'}), 400
 
-    # Obtener la clave privada del remitente
+    # Get the sender's private key
     sender_wallet = blockchain.wallets.get(sender)
     if sender_wallet is None:
-        return jsonify({'message': 'Billetera de remitente no encontrada'}), 404
+        return jsonify({'message': 'Sender wallet not found'}), 404
     private_key = sender_wallet['private_key']
 
-    # Firmar la transacción
+    # Sign the transaction
     signature = rsa.sign(json.dumps({'sender': sender, 'receiver': receiver, 'amount': amount}), private_key, 'SHA-256')
 
-    # Agregar la transacción utilizando los datos proporcionados y la firma
+    # Add the transaction using provided data and signature
     result = blockchain.add_transaction(sender, receiver, amount, signature)
     if isinstance(result, int):
-        response = {'message': 'Transacción agregada al bloque pendiente.', 'block_index': result}
+        response = {'message': 'Transaction added to pending block.', 'block_index': result}
         return jsonify(response), 201
     else:
         return jsonify({'message': result}), 400
 
-
-
-
-
-
+# Route to connect a new node to the network
 @app.route('/connect_node', methods=['POST'])
 def connect_node():
     json_data = request.get_json()
     nodes = json_data.get('nodes')
     if nodes is None: 
-        return 'No hay nodos para añadir', 400
+        return 'No nodes to add', 400
     for node in nodes:
         blockchain.add_node(node)
     response = {
-        'message': 'Todos los nodos han sido conectados. La cadena de bloques contiene ahora los nodos siguientes: ',
+        'message': 'All nodes have been connected. The blockchain now contains the following nodes: ',
         'total_nodes': list(blockchain.nodes)
     }
     return jsonify(response), 201
 
-
+# Route to replace the chain with the longest valid chain in the network
 @app.route('/replace_chain', methods=['GET'])
 def replace_chain():
     is_chain_replaced = blockchain.replace_chain()
     if is_chain_replaced:
         response = {
-            'message': 'Los nodos tenían diferentes cadenas, que han sido todas reemplazadas por la más larga.',
+            'message': 'Nodes had different chains, all replaced by the longest one.',
             'new_chain': blockchain.chain
         }
     else:
         response = {
-            'message': 'Todo correcto. La cadena en todos los nodos ya es la más larga.',
+            'message': 'Everything is fine. Chain in all nodes is already the longest one.',
             'actual_chain': blockchain.chain
         }
     return jsonify(response), 200  
 
+# Route to generate a wallet address
 @app.route('/generate_wallet', methods=['GET'])
 def generate_wallet_route():
     address = blockchain.generate_wallet()
-    response = {'message': 'Billetera generada exitosamente', 'address': address}
+    response = {'message': 'Wallet generated successfully', 'address': address}
     return jsonify(response), 200
 
+# Route to check balance of a given wallet address
 @app.route('/check_balance/<address>', methods=['GET'])
 def check_balance(address):
     wallet = blockchain.wallets.get(address)
     if wallet:
         balance = wallet.get('balance', 0)
-        response = {'message': 'Saldo consultado correctamente', 'address': address, 'balance': balance}
+        response = {'message': 'Balance queried successfully', 'address': address, 'balance': balance}
         return jsonify(response), 200
     else:
-        return jsonify({'message': 'Billetera no encontrada'}), 404
-    
+        return jsonify({'message': 'Wallet not found'}), 404
 
+# Start a thread to periodically replace the chain
 replace_chain_thread = threading.Thread(target=Blockchain.replace_chain_periodically)
-replace_chain_thread.daemon = True  # El hilo se detendrá cuando el programa principal termine
+replace_chain_thread.daemon = True  # Thread will stop when the main program ends
 replace_chain_thread.start()
-print("se ha actualizado la blockchain")
+print("Blockchain has been updated")
 
-
+# Run the Flask app
 if __name__ == '__main__':
-    # Se verifica si se especificó una dirección de minero al iniciar el nodo
+    # Check if a miner address was specified when starting the node
     if len(sys.argv) > 1:
-        # Si se especificó una dirección del minero, utilizarla
+        # If a miner address was specified, use it
         node_address = sys.argv[1]
-        print("Dirección del minero:", node_address)
+        print("Miner Address:", node_address)
     else:
-        # Si no se especificó una dirección del minero, generar una billetera automáticamente
+        # If no miner address was specified, generate a wallet automatically
         node_address = blockchain.generate_wallet()
-        print("Dirección de la billetera generada automáticamente:", node_address)
+        print("Automatically Generated Wallet Address:", node_address)
 
+    # Run the app on host '0.0.0.0' and port 5000
     app.run(host='0.0.0.0', port=5000)
-
-
