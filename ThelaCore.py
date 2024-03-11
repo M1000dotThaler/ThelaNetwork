@@ -4,6 +4,7 @@ import sys
 import time
 import rsa
 import json
+import base64
 
 # Import the Blockchain class from blockchain.py file
 from Blockchain_Network import Blockchain
@@ -38,13 +39,24 @@ def mine_block():
     
     # Create the new block
     block = blockchain.create_block(proof, previous_hash)
+
+    # Convert transactions to a serializable format (list of dictionaries)
+    transactions = block['transactions']
+    for transaction in transactions:
+     if isinstance(transaction['signature'], str):
+        signature_base64 = transaction['signature']
+     else:
+        signature_base64 = base64.b64encode(transaction['signature']).decode()  # Encode signature to base64
+     transaction['signature'] = signature_base64  
+        
+
     response = {
         'message': 'Congratulations, you have mined a new block!',
         'index': block['index'],
         'timestamp': block['timestamp'],
         'proof': block['proof'],
         'previous_hash': block['previous_hash'],
-        'transactions': block['transactions']
+        'transactions': transactions
     }
 
     return jsonify(response), 200
