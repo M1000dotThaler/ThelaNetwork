@@ -55,8 +55,7 @@ After this, open a APIs platform to make requests to the API of the Thela_Networ
 - /generate_wallet
 - /check_balance/<adress>
 
->[!IMPORTANT]  
->Currently there is an error when adding a transaction to the blockchain, due to errors in signing the transaction with the private key of the address. (Feel free to try to fix it 🙂 )
+
 
  
 ## Contributing
@@ -145,16 +144,16 @@ Thanks u very much :)
 
 Phase 1:
 
-- Fix errors in the add_transaction call(error in trying to sign with the private key of the 
-public adress the transaction)
- - Objective : Make secure and be sure that the only who can make a transaction of a public adress is
-   the user that have the private_key
+- Fixed errors in the add_transaction call and mine_block [done]
 
-- Make a max supply of 1000000 Thelas
+- Make a max supply of 1000000 Thelas 
 
-- Improve the conectivity and sync of the network with the rest of the nodes
+- Improve the conectivity and sync of the network with the rest of the node
+
+- Sync auto with all the nodes after mining a block
 
 Phase 2:
+- Web of the project(landing web)
 
 - Create a UI & desktop .exe that make the conectivity with the network and mining option 
 
@@ -164,7 +163,7 @@ Phase 2:
 
 Phase 3:
 
--Create a Web 
+-Final web
 
 -Marketing(logo...)
 
