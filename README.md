@@ -55,10 +55,10 @@ After this, open a APIs platform to make requests to the API of the Thela_Networ
 - /generate_wallet
 - /check_balance/<adress>
 
-
-
- 
 ## Contributing
+
+Here our contribuitors
+(https://github.com/M1000dotThaler/ThelaNetwork/graphs/contributors)
 
 Contributions are always welcome!
 
@@ -146,7 +146,9 @@ Phase 1:
 
 - Fixed errors in the add_transaction call and mine_block [done]
 
-- Make a max supply of 1000000 Thelas 
+- Make a max supply of 1000000 Thelas
+ - calc a PoW
+ - Calc miner award halv
 
 - Improve the conectivity and sync of the network with the rest of the node
 
