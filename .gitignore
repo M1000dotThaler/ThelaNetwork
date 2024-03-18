@@ -1,0 +1,21 @@
+# compile files
+*.o
+*.out
+
+# config user files
+*.config
+
+# auto files
+build/
+node_modules/
+
+
+
+#Cache
+.cache/
+*.bak
+__pycache__/
+
+
+#credentials
+credentials.json
