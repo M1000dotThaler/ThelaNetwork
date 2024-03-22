@@ -150,12 +150,14 @@ Phase 1:
  - calc a PoW
  - Calc miner award halv
 
+- Improve the API with the integration of FastAPI wit async functions
+
 - Improve the conectivity and sync of the network with the rest of the node
 
 - Sync auto with all the nodes after mining a block
 
 Phase 2:
-- Web of the project(landing web)
+- Web of the project 
 
 - Create a UI & desktop .exe that make the conectivity with the network and mining option 
 
